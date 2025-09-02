@@ -11,7 +11,6 @@ export class RandomForestRegressor {
   max_samples: number;
 
   constructor(
-    labels: number,
     n_estimators: number = 100,
     max_depth: number = Infinity,
     max_features: number = Infinity,

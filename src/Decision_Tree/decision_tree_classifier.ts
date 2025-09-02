@@ -19,20 +19,21 @@ export class DecisionTreeClassifier {
     this.max_depth = max_depth;
     this.min_samples_split = min_samples_split;
   }
+
   private calc_gini(labels: number[]): number {
     if (labels.length === 0) return 0;
     let obj: Record<number, number> = {};
     for (let i = 0; i < labels.length; i += 1) {
       obj[labels[i]] = (obj[labels[i]] || 0) + 1;
     }
-    let prob = 0;
     let gini = 1;
     for (const key in obj) {
-      prob = obj[key] / labels.length;
+      const prob = obj[key] / labels.length;
       gini -= prob * prob;
     }
     return gini;
   }
+
   private ginidecrease(
     parent_labels: number[],
     left_labels: number[],
@@ -48,28 +49,30 @@ export class DecisionTreeClassifier {
   }
 
   private treat_num_cols(
-    train_data: number[][] | string[][],
+    train_data: (number | string)[][],
     train_output: number[],
     id: number
-  ): [number | string, number] {
+  ): [number, number] {
     const colWithLabels = train_data.map((row, i) => ({
-      value: row[id],
+      value: row[id] as number,
       label: train_output[i],
     }));
-    colWithLabels.sort((a, b) => a.value - b.value);
+    colWithLabels.sort((a, b) => (a.value as number) - (b.value as number));
 
     let maxGiniDec = 0;
-    let bestThreshold = colWithLabels[0].value;
+    let bestThreshold = colWithLabels[0].value as number;
 
     for (let i = 1; i < colWithLabels.length; i++) {
       if (colWithLabels[i].label !== colWithLabels[i - 1].label) {
         const threshold =
-          (colWithLabels[i].value + colWithLabels[i - 1].value) / 2;
+          ((colWithLabels[i].value as number) +
+            (colWithLabels[i - 1].value as number)) /
+          2;
 
         const leftLabels: number[] = [];
         const rightLabels: number[] = [];
         for (const item of colWithLabels) {
-          if (item.value <= threshold) leftLabels.push(item.label);
+          if ((item.value as number) <= threshold) leftLabels.push(item.label);
           else rightLabels.push(item.label);
         }
 
@@ -86,14 +89,14 @@ export class DecisionTreeClassifier {
   }
 
   private treat_cat_cols(
-    train_data: number[][] | string[][],
+    train_data: (number | string)[][],
     train_output: number[],
     id: number
-  ): [string | number, number] {
+  ): [string, number] {
     const diff_labels: Record<string, number> = {};
     for (let i = 0; i < train_data.length; i += 1) {
-      diff_labels[train_data[i][id]] =
-        (diff_labels[train_data[i][id]] || 0) + 1;
+      const key = String(train_data[i][id]);
+      diff_labels[key] = (diff_labels[key] || 0) + 1;
     }
     let maxGiniDec = 0;
     let ans = "";
@@ -101,7 +104,7 @@ export class DecisionTreeClassifier {
       let left_labels: number[] = [];
       let right_labels: number[] = [];
       for (let i = 0; i < train_output.length; i += 1) {
-        if (train_data[i][id] == key) {
+        if (String(train_data[i][id]) === key) {
           left_labels.push(train_output[i]);
         } else {
           right_labels.push(train_output[i]);
@@ -116,13 +119,16 @@ export class DecisionTreeClassifier {
     return [ans, maxGiniDec];
   }
 
-  private treat_all_cols(train_data: number[][], train_output: number[]) {
+  private treat_all_cols(
+    train_data: (number | string)[][],
+    train_output: number[]
+  ) {
     let maxGinDc = 0;
     let ans: number | string = 0;
     let id = -1;
     for (let i = 0; i < train_data[0].length; i += 1) {
-      let temp: (string | number)[] = [];
-      if (typeof train_data[0][i] == "string") {
+      let temp: [string | number, number];
+      if (typeof train_data[0][i] === "string") {
         temp = this.treat_cat_cols(train_data, train_output, i);
       } else {
         temp = this.treat_num_cols(train_data, train_output, i);
@@ -130,15 +136,16 @@ export class DecisionTreeClassifier {
       if (temp[1] > maxGinDc) {
         ans = temp[0];
         id = i;
+        maxGinDc = temp[1];
       }
     }
-    let left_side_data: number[][] = [];
+    let left_side_data: (number | string)[][] = [];
     let left_side_output: number[] = [];
-    let right_side_data: number[][] = [];
+    let right_side_data: (number | string)[][] = [];
     let right_side_output: number[] = [];
 
     for (let i = 0; i < train_data.length; i += 1) {
-      if (train_data[i][id] == ans) {
+      if (train_data[i][id] === ans) {
         left_side_data.push(train_data[i]);
         left_side_output.push(train_output[i]);
       } else {
@@ -154,17 +161,23 @@ export class DecisionTreeClassifier {
       right_side_output,
       id,
       ans,
+    ] as [
+      (number | string)[][],
+      number[],
+      (number | string)[][],
+      number[],
+      number,
+      number | string
     ];
   }
 
   fit(
-    train_data: number[][] | string[][],
+    train_data: (number | string)[][],
     train_output: number[],
     depth: number = 0
   ): Node {
     const uniqueLabels = Array.from(new Set(train_output));
 
-    // Stop if pure or no features
     if (uniqueLabels.length === 1) {
       return { value: uniqueLabels[0] };
     }
@@ -177,7 +190,9 @@ export class DecisionTreeClassifier {
       const counts: Record<number, number> = {};
       train_output.forEach((val) => (counts[val] = (counts[val] || 0) + 1));
       const majority = Number(
-        Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b))
+        Object.keys(counts).reduce((a, b) =>
+          counts[Number(a)] > counts[Number(b)] ? a : b
+        )
       );
       return { value: majority };
     }
@@ -189,13 +204,15 @@ export class DecisionTreeClassifier {
       rightLabels,
       bestFeatureIndex,
       bestThreshold,
-    ] = this.treat_all_cols(train_data as number[][], train_output);
+    ] = this.treat_all_cols(train_data, train_output);
 
     if (leftData.length === 0 || rightData.length === 0) {
       const counts: Record<number, number> = {};
       train_output.forEach((val) => (counts[val] = (counts[val] || 0) + 1));
       const majority = Number(
-        Object.keys(counts).reduce((a, b) => (counts[a] > counts[b] ? a : b))
+        Object.keys(counts).reduce((a, b) =>
+          counts[Number(a)] > counts[Number(b)] ? a : b
+        )
       );
       return { value: majority };
     }
@@ -212,18 +229,18 @@ export class DecisionTreeClassifier {
     node: Node,
     sample: (string | number)[]
   ): number | undefined {
-    if (node.value == undefined) {
+    if (node.value !== undefined) {
       return node.value;
     }
 
-    if (typeof node.threshold == "number") {
-      if (sample[node.feature!] < node.threshold!) {
+    if (typeof node.threshold === "number") {
+      if ((sample[node.feature!] as number) < node.threshold) {
         return this.get_single_output(node.left!, sample);
       } else {
         return this.get_single_output(node.right!, sample);
       }
     } else {
-      if (sample[node.feature!] == node.threshold) {
+      if (sample[node.feature!] === node.threshold) {
         return this.get_single_output(node.left!, sample);
       } else {
         return this.get_single_output(node.right!, sample);

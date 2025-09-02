@@ -77,7 +77,7 @@ export class RandomForestClassifier {
     if (train_data.length == 0) {
       throw new Error("Empty Dataset was passed");
     }
-    if (train_data[0].length == train_output.length) {
+    if (train_data.length != train_output.length) {
       throw new Error("Dimension mismatch in input and output");
     }
     const forest: [Node, DecisionTreeClassifier][] = [];
@@ -90,18 +90,22 @@ export class RandomForestClassifier {
   get_single_output(
     forest: [Node, DecisionTreeClassifier][],
     sample: number[]
-  ) {
-    let outputs: number[] = [];
+  ): number {
+    let outputs: (number | undefined)[] = [];
     for (let i = 0; i < forest.length; i += 1) {
       outputs.push(forest[i][1].get_single_output(forest[i][0], sample));
     }
-    let obj = {};
+
+    const counts: Record<number, number> = {};
     let ans = -1;
     let max = 0;
-    for (let i = 0; i < outputs.length; i += 1) {
-      obj[outputs[i]] = (obj[outputs[i]] || 0) + 1;
-      if (obj[outputs[i]] > max) {
-        ans = outputs[i];
+
+    for (const out of outputs) {
+      if (out === undefined) continue;
+      counts[out] = (counts[out] || 0) + 1;
+      if (counts[out] > max) {
+        max = counts[out];
+        ans = out;
       }
     }
     return ans;
@@ -111,8 +115,6 @@ export class RandomForestClassifier {
     forest: [Node, DecisionTreeClassifier][],
     val_data: number[][]
   ): number[] {
-    return val_data.map((val) => {
-      return this.get_single_output(forest, val);
-    });
+    return val_data.map((val) => this.get_single_output(forest, val));
   }
 }

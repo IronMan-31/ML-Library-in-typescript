@@ -1,7 +1,7 @@
 export class KNearestNeighours {
   k: number;
-  train_data: number[][];
-  train_output: number[];
+  train_data: number[][] = [];
+  train_output: number[] = [];
   constructor(k: number = 5) {
     this.k = k;
   }

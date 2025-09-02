@@ -6,7 +6,18 @@
   "scripts": {
     "test": "node examples/demo_linear.js"
   },
-  "keywords": ["machine-learning", "ml", "ai", "from-scratch", "typescript"],
+  "keywords": [
+    "machine-learning",
+    "ml",
+    "ai",
+    "from-scratch",
+    "typescript"
+  ],
   "author": "Pranab Pandey",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
 }

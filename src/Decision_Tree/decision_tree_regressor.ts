@@ -148,12 +148,23 @@ export class DecisionTreeRegressor {
     };
   }
 
-  get_single_output(node: Node, sample: number[]): number {
+  get_single_output(node: Node, sample: (number | string)[]): number {
     if (node.value !== undefined) return node.value;
-    if (sample[node.feature]! <= node.threshold!) {
-      return this.get_single_output(node.left!, sample);
+    if (node.feature === undefined || node.threshold === undefined) {
+      throw new Error("Invalid tree structure: missing feature or threshold.");
+    }
+    if (typeof node.threshold == "string") {
+      if (sample[node.feature] == node.threshold!) {
+        return this.get_single_output(node.left!, sample);
+      } else {
+        return this.get_single_output(node.right!, sample);
+      }
     } else {
-      return this.get_single_output(node.right!, sample);
+      if (Number(sample[node.feature]) <= Number(node.threshold)!) {
+        return this.get_single_output(node.left!, sample);
+      } else {
+        return this.get_single_output(node.right!, sample);
+      }
     }
   }
 
