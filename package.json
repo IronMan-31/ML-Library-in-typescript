@@ -1,0 +1,12 @@
+{
+  "name": "ts-ml",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node examples/demo_linear.js"
+  },
+  "keywords": ["machine-learning", "ml", "ai", "from-scratch", "typescript"],
+  "author": "Pranab Pandey",
+  "license": "MIT"
+}
